@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Countdown</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --text: #ffffff;
+            --text-light: #d1d5db;
+            --accent: #ff6b6b;
+            --accent-dark: #e55a5a;
+            --card-bg: rgba(255, 255, 255, 0.2);
+            --gradient: linear-gradient(135deg, #ff9a9e, #fad0c4, #c4b5fd);
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+            background: transparent;
+        }
+
+        /* Video background */
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        #video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            min-width: 100vw;
+            min-height: 100vh;
+            object-fit: cover;
+            border: none;
+        }
+
+        /* Ensure video covers full screen on scroll */
+        @media (min-aspect-ratio: 16/9) {
+            #video-bg {
+                height: 100%;
+                width: auto;
+            }
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            #video-bg {
+                width: 100%;
+                height: auto;
+            }
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Header */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 5vw;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            position: relative;
+            z-index: 2;
+            padding: 2rem;
+        }
+
+        .countdown-title {
+            font-size: clamp(3rem, 7vw, 5rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 255, 255, 0.6);
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .countdown-title .emoji {
+            font-size: 1.2em;
+            vertical-align: middle;
+        }
+
+        .countdown-subtitle {
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .countdown-message {
+            font-size: clamp(1rem, 2vw, 1.4rem);
+            font-weight: 400;
+            color: var(--text-light);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        .countdown-instructions {
+            font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+            font-weight: 400;
+            color: var(--text);
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        .countdown-instructions strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Bounce animation for title */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Days grid */
+        .days-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 5rem 5vw;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .day-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .day-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .day-number {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .day-date {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 1.25rem;
+            font-weight: 400;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .day-content {
+            padding: 2.5rem;
+        }
+
+        .day-message {
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1.75rem;
+            color: var(--text);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .day-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .day-btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .view-btn {
+            background: var(--accent);
+            color: white;
+            flex: 1;
+        }
+
+        .view-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .edit-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-light);
+        }
+
+        .edit-btn:hover {
+            border-color: var(--text);
+            color: var(--text);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 850px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 1.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 0.5rem;
+        }
+
+        .modal-body {
+            padding: 2.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            background: rgba(245, 245, 245, 0.5);
+        }
+
+        .image-upload {
+            display: inline-block;
+            margin-top: 1rem;
+            color: var(--accent);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-upload input {
+            display: none;
+        }
+
+        .modal-text {
+            min-height: 220px;
+            line-height: 1.7;
+            font-size: 1.1rem;
+            padding: 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            outline: none;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.1);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-actions {
+            padding: 1.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            padding: 0.8rem 1.75rem;
+            border-radius: 50px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .cancel-btn {
+            background: transparent;
+            color: var(--text-light);
+        }
+
+        .save-btn {
+            background: var(--accent);
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        /* Admin controls */
+        .admin-btn {
+            position: fixed;
+            bottom: 2.5rem;
+            right: 2.5rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .admin-btn:hover {
+            transform: scale(1.15);
+            background: var(--accent-dark);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .day-card {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .day-card:nth-child(1) { animation-delay: 0.1s; }
+        .day-card:nth-child(2) { animation-delay: 0.2s; }
+        .day-card:nth-child(3) { animation-delay: 0.3s; }
+        .day-card:nth-child(4) { animation-delay: 0.4s; }
+        .day-card:nth-child(5) { animation-delay: 0.5s; }
+        .day-card:nth-child(6) { animation-delay: 0.6s; }
+        .day-card:nth-child(7) { animation-delay: 0.7s; }
+        .day-card:nth-child(8) { animation-delay: 0.8s; }
+        .day-card:nth-child(9) { animation-delay: 0.9s; }
+        .day-card:nth-child(10) { animation-delay: 1s; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .days-container {
+                grid-template-columns: 1fr;
+                padding: 3rem 3vw;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            .modal-image {
+                height: 250px;
+            }
+
+            .countdown-title {
+                font-size: clamp(2rem, 5vw, 3.5rem);
+            }
+
+            .countdown-subtitle {
+                font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            }
+        }
+
+        /* Mobile blocker */
+        #blocker {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- YouTube Video Container -->
+    <div id="video-container">
+        <iframe id="video-bg"
+                src="https://www.youtube.com/embed/4uSiGDC_-FQ?autoplay=1&mute=1&loop=1&playlist=4uSiGDC_-FQ&controls=0&modestbranding=1&showinfo=0&rel=0&disablekb=1&fs=0"
+                allow="accelerometer; autoplay; encrypted-media; gyroscope">
+        </iframe>
+    </div>
+
+    <!-- Hero section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="countdown-title"><span class="emoji">🎉</span> Birthday Countdown Begins! <span class="emoji">🎉</span></h1>
+            <p class="countdown-subtitle">Happy Birthday in advance, Adi</p>
+            <p class="countdown-message">This little surprise is just a tiny piece of how much you mean to me. <span class="emoji">🥰</span></p>
+            <p class="countdown-message">I wanted to make this birthday extra special, so I planned something for you every single day, starting from the 7th.</p>
+            <p class="countdown-instructions">How it works: Every day, you get to open only the box for that date. Each one holds a little love, surprise, or something special planned just for you. <strong>No NATAKI PLEASE.</strong></p>
+        </div>
+    </section>
+
+    <!-- Days grid -->
+    <section class="days-container" id="daysContainer">
+        <!-- Generated by JavaScript -->
+    </section>
+
+    <!-- Modal -->
+    <div class="modal" id="dayModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Day 1 - July 7, 2025</h3>
+                <button class="close-btn" id="closeModal">×</button>
+            </div>
+            <div class="modal-body">
+                <img src="" alt="Day image" class="modal-image" id="modalImage">
+                <label class="image-upload">
+                    <i class="fas fa-camera"></i> Change image
+                    <input type="file" id="imageUpload" accept="image/*">
+                </label>
+                <div class="modal-text" id="modalText" contenteditable="true">
+                    <!-- Editable content -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel-btn" id="cancelBtn">Cancel</button>
+                <button class="modal-btn save-btn" id="saveBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin button -->
+    <div class="admin-btn" id="adminBtn">
+        <i class="fas fa-cog"></i>
+    </div>
+
+    <!-- Mobile blocker -->
+    <div id="blocker"></div>
+
+    <script>
+        // Data structure
+        const countdownData = {
+            title: "🎉 Birthday Countdown Begins! 🎉",
+            subtitle: "Happy Birthday in advance, Adi",
+            message: "This little surprise is just a tiny piece of how much you mean to me. 🥰\nI wanted to make this birthday extra special, so I planned something for you every single day, starting from the 7th.",
+            instructions: "How it works: Every day, you get to open only the box for that date. Each one holds a little love, surprise, or something special planned just for you. No NATAKI PLEASE.",
+            days: []
+        };
+
+        // Create days from July 7 to July 23 (17 days)
+        const startDate = new Date(2025, 6, 7); // July 7, 2025
+
+        // Sample messages
+        const sampleMessages = {
+            1: "Here we go, Adi! Day 1 of your special countdown—get ready for some love and surprises! 🎈",
+            8: "Halfway through, and you’re already shining brighter every day. Here’s to you, my healthy star! 🌟",
+            13: "Your kindness and maturity make every moment special. A little love for you today! 💖",
+            17: "Happy Birthday, Adi! Today’s the big day, and it’s all about celebrating YOU! 🎉"
+        };
+
+        // Generate days
+        for (let i = 1; i <= 17; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + (i - 1));
+
+            const day = {
+                number: i,
+                date: currentDate,
+                message: sampleMessages[i] || `Day ${i} of your birthday countdown, Adi. A special surprise awaits you! 🎁`,
+                image: `https://source.unsplash.com/random/800x500/?birthday,celebration,${i}`
+            };
+
+            countdownData.days.push(day);
+        }
+
+        // DOM elements
+        const daysContainer = document.getElementById('daysContainer');
+        const modal = document.getElementById('dayModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalImage = document.getElementById('modalImage');
+        const modalText = document.getElementById('modalText');
+        const imageUpload = document.getElementById('imageUpload');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const adminBtn = document.getElementById('adminBtn');
+        const blocker = document.getElementById('blocker');
+
+        let currentDay = null;
+
+        // Render days
+        function renderDays() {
+            daysContainer.innerHTML = '';
+
+            countdownData.days.forEach(day => {
+                const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+                const formattedDate = day.date.toLocaleDateString('en-US', options);
+
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card';
+                dayCard.dataset.day = day.number;
+
+                dayCard.innerHTML = `
+                    <div class="day-content">
+                        <div class="day-number">Day ${day.number}</div>
+                        <div class="day-date">${formattedDate}</div>
+                        <p class="day-message">${day.message}</p>
+                        <div class="day-actions">
+                            <button class="day-btn edit-btn"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="day-btn view-btn"><i class="fas fa-eye"></i> View</button>
+                        </div>
+                    </div>
+                `;
+
+                daysContainer.appendChild(dayCard);
+            });
+
+            // Add event listeners
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', openDayModal);
+            });
+
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', editDay);
+            });
+        }
+
+        // Open day modal
+        function openDayModal() {
+            const dayCard = this.closest('.day-card');
+            const dayNumber = parseInt(dayCard.dataset.day);
+            currentDay = countdownData.days.find(d => d.number === dayNumber);
+
+            const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+            const formattedDate = currentDay.date.toLocaleDateString('en-US', options);
+
+            modalTitle.textContent = `Day ${dayNumber} - ${formattedDate}`;
+            modalText.innerHTML = currentDay.message;
+            modalImage.src = currentDay.image;
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Edit day
+        function editDay() {
+            openDayModal.call(this);
+            modalText.contentEditable = 'true';
+            modalText.focus();
+        }
+
+        // Close modal
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Save changes
+        function saveChanges() {
+            if (!currentDay) return;
+
+            currentDay.message = modalText.innerHTML;
+            renderDays();
+            closeModal();
+        }
+
+        // Handle image upload
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    modalImage.src = event.target.result;
+                    if (currentDay) {
+                        currentDay.image = event.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Admin controls
+        adminBtn.addEventListener('click', function() {
+            alert('Admin panel would allow full customization of:\n- Title & subtitle\n- All day messages\n- Color scheme\n- Layout preferences');
+        });
+
+        // Event listeners
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        saveBtn.addEventListener('click', saveChanges);
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Video background cleanup
+        function cleanYouTubeBranding() {
+            try {
+                const ytElements = [
+                    '.ytp-title-link',
+                    '.ytp-pause-overlay',
+                    '.ytp-watermark',
+                    '.ytp-chrome-top',
+                    '.ytp-chrome-bottom',
+                    '.ytp-gradient-top',
+                    '.ytp-gradient-bottom'
+                ];
+                ytElements.forEach(selector => {
+                    const element = document.querySelector(selector);
+                    if (element) element.style.display = 'none';
+                });
+            } catch (e) {}
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set header content
+            document.querySelector('.countdown-title').innerHTML = countdownData.title;
+            document.querySelector('.countdown-subtitle').textContent = countdownData.subtitle;
+            document.querySelectorAll('.countdown-message').forEach((el, index) => {
+                el.innerHTML = countdownData.message.split('\n')[index];
+            });
+            document.querySelector('.countdown-instructions').innerHTML = countdownData.instructions;
+
+            // Render days
+            renderDays();
+
+            // Animate hero on load
+            setTimeout(() => {
+                document.querySelector('.hero-content').style.opacity = '1';
+                document.querySelector('.hero-content').style.transform = 'translateY(0)';
+            }, 300);
+
+            // Mobile detection for video autoplay
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                blocker.style.display = 'block';
+                blocker.addEventListener('click', function() {
+                    const iframe = document.getElementById('video-bg');
+                    iframe.src += "&autoplay=1";
+                    blocker.style.display = 'none';
+                });
+            }
+
+            // Periodic YouTube branding cleanup
+            setInterval(cleanYouTubeBranding, 500);
+        });
+    </script>
+</body>
+</html>
